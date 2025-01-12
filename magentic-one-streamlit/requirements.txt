@@ -1,0 +1,7 @@
+autogen-agentchat==0.4.0.dev13
+autogen-ext[openai,azure]==0.4.0.dev13
+autogen-ext[web-surfer]==0.4.0.dev13
+autogen-ext[magnetic-one]==0.4.0.dev13
+psycopg[binary]
+python-dotenv
+streamlit

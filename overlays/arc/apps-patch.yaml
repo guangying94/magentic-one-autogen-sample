@@ -1,0 +1,12 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env/0/value
+  value: "192.168.2.1"
+- op: replace
+  path: /spec/template/spec/containers/0/env/3/value
+  value: "1432"
+- op: replace
+  path: /spec/template/spec/containers/0/env/4/value
+  value: "phi3.5:3.8b-mini-instruct-q2_K"
+- op: replace
+  path: /spec/template/spec/containers/0/env/6/value
+  value: "AOAI"

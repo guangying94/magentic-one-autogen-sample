@@ -1,0 +1,12 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env/0/value
+  value: "xxxxxxxx.postgres.database.azure.com"
+- op: replace
+  path: /spec/template/spec/containers/0/env/3/value
+  value: "5432"
+- op: replace
+  path: /spec/template/spec/containers/0/env/4/value
+  value: "Phi-3.5-MoE-instruct"
+- op: replace
+  path: /spec/template/spec/containers/0/env/6/value
+  value: "OAI"

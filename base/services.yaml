@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: magentic-service
+  namespace: arc-app-demo
+spec:
+  type: LoadBalancer
+  selector:
+    app: magentic
+  ports:
+    - protocol: TCP
+      port: 8501
+      targetPort: 8501

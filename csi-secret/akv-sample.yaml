@@ -1,0 +1,42 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: akvprovider-arc
+  namespace: arc-app-demo
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    keyvaultName: REPLACE-WITH-YOUR-KEYVAULT-NAME
+    cloudName: AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: LITE-LLM-KEY
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: POSTGRESQL-PASSWORD
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: AZURE-OPEN-AI-KEY
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: OPEN-AI-API-KEY
+          objectType: secret
+          objectVersion: ""
+    tenantId: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  secretObjects:
+      - secretName: apps-akv-secret
+        type: Opaque
+        data:
+          - objectName: LITE-LLM-KEY
+            key: LITE-LLM-KEY
+          - objectName: POSTGRESQL-PASSWORD
+            key: POSTGRESQL-PASSWORD
+          - objectName: OPEN-AI-API-KEY
+            key: OPEN-AI-API-KEY
+          - objectName: AZURE-OPEN-AI-KEY
+            key: AZURE-OPEN-AI-KEY

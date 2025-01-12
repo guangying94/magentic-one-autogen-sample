@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magentic-deployment
+  namespace: arc-app-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magentic
+  template:
+    metadata:
+      labels:
+        app: magentic
+    spec:
+      containers:
+        - name: magentic-container
+          image: xxxxx.azurecr.io/magentic-one:1.0.0
+          ports:
+            - containerPort: 8501
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+          env:
+            - name: POSTGRESQL_HOST
+              value: xxxxxxxx.postgres.database.azure.com
+            - name: POSTGRESQL_DB
+              value: ai_demo
+            - name: POSTGRESQL_USER
+              value: user
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: LLM_MODEL_NAME
+              value: phi3.5:latest
+            - name: LITELLM_HOST
+              value: https://sample.litellm.com
+            - name: MAGENTIC_ONE_MODE
+              value: AOAI
+            - name: AZURE_OPEN_AI_ENDPOINT
+              value: https://xxxxxx.openai.azure.com/
+            - name: AZURE_OPEN_AI_MODEL_NAME
+              value: gpt-4o-mini
+            - name: OPEN_AI_MODEL_NAME
+              value: gpt-4o-mini-2024-07-18
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apps-akv-secret
+                  key: POSTGRESQL-PASSWORD
+            - name: LITE_LLM_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apps-akv-secret
+                  key: LITE-LLM-KEY
+            - name: AZURE_OPEN_AI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apps-akv-secret
+                  key: AZURE-OPEN-AI-KEY
+            - name: OPEN_AI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apps-akv-secret
+                  key: OPEN-AI-API-KEY
+      imagePullSecrets:
+        - name: acr-secret
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "akvprovider-arc"
+            nodePublishSecretRef:
+              name: secrets-store-creds
