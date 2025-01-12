@@ -73,3 +73,4 @@ docker run -p 8501:8501 magentic-one-streamlit
 - [Magentic-One](https://www.microsoft.com/en-us/research/articles/magentic-one-a-generalist-multi-agent-system-for-solving-complex-tasks/)
 - [Microsoft Autogen 0.4](https://microsoft.github.io/autogen/stable/)
 - [Autogen Extension - Magentic-One](https://microsoft.github.io/autogen/stable/reference/python/autogen_ext.teams.magentic_one.html)
+- [LiteLLM](https://docs.litellm.ai/docs/)
