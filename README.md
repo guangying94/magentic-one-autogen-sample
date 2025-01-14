@@ -80,4 +80,6 @@ Refer to the following guide to setup GitOps in Azure Kubernetes Services or Azu
 Once the deployment is successful, you can access the app via the Load Balancer IP. You will have a public IP for Azure Kubernetes Services, and a private IP (local IP) for Azure Arc enabled Kubernetes, hence access the app accordingly.
 
 ## Demo screenshot
+#### Download the full video demo here: [Magentic-One Demo Video](https://share.marcustgy.dev/u/rg4DLk.mov)
+
 ![Magentic-One Streamlit](./assets/sample-app.png)
