@@ -43,7 +43,7 @@ async def run_video_task(user_prompt: str):
         model_client = AzureOpenAIChatCompletionClient(
             azure_endpoint=os.getenv('AZURE_OPEN_AI_ENDPOINT'),
             model=os.getenv('AZURE_OPEN_AI_MODEL_NAME'),
-            api_version="2024-05-01-preview",
+            api_version="2024-12-01-preview",
             api_key=os.getenv('AZURE_OPEN_AI_KEY'),
         )
     else:
