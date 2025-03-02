@@ -61,7 +61,6 @@ docker run -p 8501:8501 magentic-one-streamlit
 | `LLM_MODEL_NAME`             | Name of the language model                       | `phi3.5:latest`                           |
 | `LITELLM_HOST`               | Host address for the LiteLLM service             | `https://sample.litellm.com`                         |
 | `LITE_LLM_KEY`               | API key for the LiteLLM service                  | `sk-12345678`                                  |
-| `MAGENTIC_ONE_MODE`          | Mode for the Magentic One service (AOAI or OAI)  | `AOAI`                                     |
 | `AZURE_OPEN_AI_ENDPOINT`     | Endpoint for Azure OpenAI service                | `https://xxxxx.openai.azure.com/`     |
 | `AZURE_OPEN_AI_KEY`          | API key for Azure OpenAI service                 | `xxxxx`                   |
 | `AZURE_OPEN_AI_MODEL_NAME`   | Model name for Azure OpenAI service              | `gpt-4o-mini`                              |

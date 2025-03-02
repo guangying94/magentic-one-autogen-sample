@@ -8,17 +8,15 @@ from autogen_ext.teams.magentic_one import MagenticOne
 
 load_dotenv()
 
-MAGENTIC_ONE_MODE=os.getenv('MAGENTIC_ONE_MODE')
-
 def format_source_display(source):
     """
-    Returns a formatted string with an emoji representing the source type.
+    Converts a source identifier into a user-friendly display string with an appropriate emoji.
     
     Args:
-        source (str): The source type to format.
+        source (str): The message source identifier
         
     Returns:
-        str: A string with an emoji and the source type.
+        str: Formatted string with emoji representing the source
     """
     if source == "user":
         return "👤 User"
@@ -33,30 +31,30 @@ def format_source_display(source):
     else:
         return f"💻 Terminal"
 
-async def run_task(user_prompt: str):
+async def run_task(user_prompt: str, USE_AOAI):
     """
-    Executes a task based on the user prompt using either OpenAI or Azure OpenAI client, together with Magentic-One via Autogen extension.
-    Streams the results and displays them in the UI.
+    Executes a task with the given user prompt using either Azure OpenAI or OpenAI.
+    Streams and displays results in the Streamlit UI as they become available.
     
     Args:
-        user_prompt (str): The prompt provided by the user.
+        user_prompt (str): The task prompt from the user
+        USE_AOAI (bool): Whether to use Azure OpenAI API
         
     Yields:
-        chunk: The result chunk from the task.
-        float: The time taken to complete the task.
+        Various message chunks and task results
     """
     start_time = time.time()
-    if(MAGENTIC_ONE_MODE == 'OAI'):
-        client = OpenAIChatCompletionClient(
-            model=os.getenv('OPEN_AI_MODEL_NAME'),
-            api_key=os.getenv('OPEN_AI_API_KEY')
-        )
-    else:
+    if(USE_AOAI):
         client = AzureOpenAIChatCompletionClient(
             azure_endpoint=os.getenv('AZURE_OPEN_AI_ENDPOINT'),
             model=os.getenv('AZURE_OPEN_AI_MODEL_NAME'),
-            api_version="2024-05-01-preview",
+            api_version="2024-12-01-preview",
             api_key=os.getenv('AZURE_OPEN_AI_KEY')
+        )
+    else:
+        client = OpenAIChatCompletionClient(
+            model=os.getenv('OPEN_AI_MODEL_NAME'),
+            api_key=os.getenv('OPEN_AI_API_KEY')
         )
 
     m1 = MagenticOne(client=client)
@@ -73,37 +71,53 @@ async def run_task(user_prompt: str):
         yield chunk
     yield None, time.time() - start_time
 
-async def collect_results(user_prompt: str):
+async def collect_results(user_prompt: str, USE_AOAI):
     """
-    Collects and returns all result chunks from the run_task function.
+    Collects all results from run_task and accumulates token usage statistics.
+    Updates session state with token counts.
     
     Args:
-        user_prompt (str): The prompt provided by the user.
+        user_prompt (str): The task prompt from the user
+        USE_AOAI (bool): Whether to use Azure OpenAI API
         
     Returns:
-        list: A list of result chunks.
+        list: Collection of all result chunks
     """
     results = []
-    async for chunk in run_task(user_prompt):
+    async for chunk in run_task(user_prompt, USE_AOAI):
         results.append(chunk)
+    for result in results:
+        if result is not None and result.__class__.__name__ == 'TaskResult':
+            print(result)
+            for message in result.messages:
+                if message.source != "user":
+                    if message.models_usage:
+                        st.session_state.prompt_token = message.models_usage.prompt_tokens + st.session_state.prompt_token
+                        st.session_state.completion_token = message.models_usage.completion_tokens + st.session_state.completion_token
     return results
 
 def main():
     st.title('🧠🤖 Magentic-One Demo')
     st.write('Implementation using Autogen and Streamlit')
 
+    st.sidebar.title('Settings')
+    USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
+
     if 'output' not in st.session_state:
         st.session_state.output = None
         st.session_state.elapsed = None
+        st.session_state.prompt_token = 0
+        st.session_state.completion_token = 0
 
     prompt = st.text_input('What is the task today?', value='')
 
     if st.button('Execute'):
-        results = asyncio.run(collect_results(prompt))
+        results = asyncio.run(collect_results(prompt, USE_AOAI))
         st.session_state.elapsed = results[-1][1] if results[-1] is not None else None
 
     if st.session_state.elapsed is not None:
-        st.write(f"Elapsed time: {st.session_state.elapsed:.2f} seconds")
+        st.write(f"**Prompt tokens: {st.session_state.prompt_token}**")
+        st.write(f"**Completion tokens: {st.session_state.completion_token}**")
 
 if __name__ == "__main__":
     main()
