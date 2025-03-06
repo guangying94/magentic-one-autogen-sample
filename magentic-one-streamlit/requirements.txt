@@ -7,3 +7,4 @@ python-dotenv
 streamlit
 autogen-ext[video-surfer]==0.4.7
 yt-dlp
+azure-identity

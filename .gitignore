@@ -7,3 +7,5 @@
 */.gitignore
 */.dockerignore
 */.git
+
+.env
