@@ -1,10 +1,10 @@
-autogen-agentchat==0.4.7
-autogen-ext[openai,azure]==0.4.7
-autogen-ext[web-surfer]==0.4.7
-autogen-ext[magnetic-one]==0.4.7
+autogen-agentchat==0.4.8
+autogen-ext[openai,azure]==0.4.8
+autogen-ext[web-surfer]==0.4.8
+autogen-ext[magnetic-one]==0.4.8
 psycopg[binary]
 python-dotenv
 streamlit
-autogen-ext[video-surfer]==0.4.7
+autogen-ext[video-surfer]==0.4.8
 yt-dlp
 azure-identity
