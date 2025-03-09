@@ -31,7 +31,7 @@ def format_source_display(source):
     else:
         return f"💻 Terminal"
 
-async def run_task(user_prompt: str, USE_AOAI):
+async def run_task(user_prompt: str, USE_AOAI, model_name=None):
     """
     Executes a task with the given user prompt using either Azure OpenAI or OpenAI.
     Streams and displays results in the Streamlit UI as they become available.
@@ -71,7 +71,7 @@ async def run_task(user_prompt: str, USE_AOAI):
         yield chunk
     yield None, time.time() - start_time
 
-async def collect_results(user_prompt: str, USE_AOAI):
+async def collect_results(user_prompt: str, USE_AOAI, model_name=None):
     """
     Collects all results from run_task and accumulates token usage statistics.
     Updates session state with token counts.
@@ -84,7 +84,7 @@ async def collect_results(user_prompt: str, USE_AOAI):
         list: Collection of all result chunks
     """
     results = []
-    async for chunk in run_task(user_prompt, USE_AOAI):
+    async for chunk in run_task(user_prompt, USE_AOAI, model_name):
         results.append(chunk)
     for result in results:
         if result is not None and result.__class__.__name__ == 'TaskResult':
@@ -103,6 +103,10 @@ def main():
     st.sidebar.title('Settings')
     USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
 
+    if(USE_AOAI):
+        aoai_model_options = ["gpt-4o", "gpt-4o-mini", "o3-mini"]
+        selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
+
     if 'output' not in st.session_state:
         st.session_state.output = None
         st.session_state.elapsed = None
@@ -112,7 +116,8 @@ def main():
     prompt = st.text_input('What is the task today?', value='')
 
     if st.button('Execute'):
-        results = asyncio.run(collect_results(prompt, USE_AOAI))
+        st.write(f"**Task is submitted with {selected_model} model.**")
+        results = asyncio.run(collect_results(prompt, USE_AOAI, selected_model))
         st.session_state.elapsed = results[-1][1] if results[-1] is not None else None
 
     if st.session_state.elapsed is not None:

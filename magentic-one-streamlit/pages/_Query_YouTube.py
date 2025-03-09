@@ -34,7 +34,7 @@ def format_source_display(source):
     else:
         return f"💻 Video Surfer"
 
-async def run_video_task(user_prompt: str):
+async def run_video_task(user_prompt: str, model_name=None):
     """Yield console output so we can display it in Streamlit."""
     start_time = time.time()
 
@@ -42,7 +42,7 @@ async def run_video_task(user_prompt: str):
     if USE_AOAI:
         model_client = AzureOpenAIChatCompletionClient(
             azure_endpoint=os.getenv('AZURE_OPEN_AI_ENDPOINT'),
-            model=os.getenv('AZURE_OPEN_AI_MODEL_NAME'),
+            model=model_name,
             api_version="2024-12-01-preview",
             api_key=os.getenv('AZURE_OPEN_AI_KEY'),
         )
@@ -93,10 +93,10 @@ async def run_video_task(user_prompt: str):
     yield None, time.time() - start_time
 
 
-async def collect_video_results(prompt: str):
+async def collect_video_results(prompt: str, model_name=None):
     """Collect all chunks from run_video_task into a list and return it."""
     results = []
-    async for chunk in run_video_task(prompt):
+    async for chunk in run_video_task(prompt, model_name):
         results.append(chunk)
     for result in results:
         if result is not None and result.__class__.__name__ == 'TaskResult':
@@ -109,9 +109,14 @@ async def collect_video_results(prompt: str):
     return results
 
 st.title("Autogen Video Surfer Agent - Query YouTube")
+st.write("This is a Streamlit app that uses the Autogen Video Surfer agent to answer questions about a YouTube video. It uses yt_dlp to download the video and the Autogen Video Surfer agent to answer questions about the video. This sample code is only for research and experiment purposes.")
 
 st.sidebar.title("Settings")
 USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
+
+if(USE_AOAI):
+    aoai_model_options = ["gpt-4o", "gpt-4o-mini", "o3-mini"]
+    selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
 
 st.write("Provide the URL of the YouTube video")
 video_url = st.text_input("Video URL", value="")
@@ -139,7 +144,7 @@ if video_url:
         
         if video_path:
             st.info('Processing video, please wait...', icon="ℹ️")
-            results = asyncio.run(collect_video_results(f"The videos can be found in {video_path}. {task_definition}"))
+            results = asyncio.run(collect_video_results(f"The videos can be found in {video_path}. {task_definition}", selected_model))
             st.write("Done processing video!")
             st.write(f"**Prompt tokens: {st.session_state.prompt_token}**")
             st.write(f"**Completion tokens: {st.session_state.completion_token}**")

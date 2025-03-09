@@ -20,6 +20,10 @@ st. write("Microsoft Autogen extension for video surfer agent")
 st.sidebar.title("Settings")
 USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
 
+if(USE_AOAI):
+    aoai_model_options = ["gpt-4o", "gpt-4o-mini", "o3-mini"]
+    selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
+
 # Video upload
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov", "avi", "mkv"])
 
@@ -29,7 +33,7 @@ def format_source_display(source):
     else:
         return f"💻 Video Surfer"
 
-async def run_video_task(user_prompt: str):
+async def run_video_task(user_prompt: str, model_name=None):
     """Yield console output so we can display it in Streamlit."""
     start_time = time.time()
 
@@ -37,7 +41,7 @@ async def run_video_task(user_prompt: str):
     if USE_AOAI:
         model_client = AzureOpenAIChatCompletionClient(
             azure_endpoint=os.getenv('AZURE_OPEN_AI_ENDPOINT'),
-            model=os.getenv('AZURE_OPEN_AI_MODEL_NAME'),
+            model=model_name,
             api_version="2024-12-01-preview",
             api_key=os.getenv('AZURE_OPEN_AI_KEY'),
         )
@@ -86,10 +90,10 @@ async def run_video_task(user_prompt: str):
 
     yield None, time.time() - start_time
 
-async def collect_video_results(prompt: str):
+async def collect_video_results(prompt: str, model_name=None):
     """Collect all chunks from run_video_task into a list and return it."""
     results = []
-    async for chunk in run_video_task(prompt):
+    async for chunk in run_video_task(prompt, model_name):
         results.append(chunk)
     return results
 
@@ -109,6 +113,7 @@ if uploaded_file is not None:
 
     if st.button("Submit"):
         st.write("Task Defintion:")
-        results = asyncio.run(collect_video_results(f"The videos can be found in {UPLOAD_DIR}. {user_question}"))
+        st.write(f"The task is being executed with {selected_model} model.")
+        results = asyncio.run(collect_video_results(f"The videos can be found in {UPLOAD_DIR}. {user_question}", selected_model))
         st.write("Done processing video!")
 
