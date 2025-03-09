@@ -19,8 +19,13 @@ COPY . .
 # Install playwright
 RUN playwright install --with-deps chromium
 
-# Expose the port that Streamlit will run on
-EXPOSE 8501
+# Copy the start script into the container
+COPY start.sh .
 
-# Command to run the Streamlit app
-CMD ["streamlit", "run", "Home.py"]
+RUN chmod +x start.sh
+
+# Expose the ports for Streamlit and FastAPI
+EXPOSE 8501 8000
+
+# Command to run the start script
+CMD ["./start.sh"]

@@ -8,3 +8,5 @@ streamlit
 autogen-ext[video-surfer]==0.4.8
 yt-dlp
 azure-identity
+fastapi
+uvicorn

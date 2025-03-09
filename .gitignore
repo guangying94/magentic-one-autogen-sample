@@ -9,3 +9,8 @@
 */.git
 
 .env
+
+*/api/__pycache__/
+*/api/magentic_one_tasks.db
+
+*/api/test.http
