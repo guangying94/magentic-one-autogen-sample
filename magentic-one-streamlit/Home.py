@@ -47,7 +47,7 @@ async def run_task(user_prompt: str, USE_AOAI, model_name=None):
     if(USE_AOAI):
         client = AzureOpenAIChatCompletionClient(
             azure_endpoint=os.getenv('AZURE_OPEN_AI_ENDPOINT'),
-            model=os.getenv('AZURE_OPEN_AI_MODEL_NAME'),
+            model=model_name,
             api_version="2024-12-01-preview",
             api_key=os.getenv('AZURE_OPEN_AI_KEY')
         )
