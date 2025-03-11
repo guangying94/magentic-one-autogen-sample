@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from autogen_ext.models.openai import OpenAIChatCompletionClient, AzureOpenAIChatCompletionClient
 from autogen_ext.teams.magentic_one import MagenticOne
+from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 
 load_dotenv()
 
@@ -57,7 +58,7 @@ async def run_task(user_prompt: str, USE_AOAI, model_name=None):
             api_key=os.getenv('OPEN_AI_API_KEY')
         )
 
-    m1 = MagenticOne(client=client)
+    m1 = MagenticOne(client=client, code_executor=LocalCommandLineCodeExecutor())
     async for chunk in m1.run_stream(task=user_prompt):
         if chunk.__class__.__name__ != 'TaskResult':
             st.write(f"**{format_source_display(chunk.source)}**")
