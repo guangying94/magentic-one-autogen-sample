@@ -5,7 +5,7 @@
 */.env
 */.DS_Store
 */.gitignore
-
+*/.dockerignore
 */.git
 
 .env
