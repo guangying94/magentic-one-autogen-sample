@@ -3,118 +3,19 @@ import asyncio
 import time
 import os
 import uuid
-import json
 from datetime import datetime
 from dotenv import load_dotenv
 from autogen_ext.models.openai import OpenAIChatCompletionClient, AzureOpenAIChatCompletionClient
 from autogen_ext.teams.magentic_one import MagenticOne
 from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 
-# Conditional import for Azure Cosmos DB
-STORE_RUN_RESULT = os.getenv('STORE_RUN_RESULT', '').lower() == 'true'
-if STORE_RUN_RESULT:
-    from azure.cosmos import CosmosClient
-    from azure.identity import DefaultAzureCredential
+# Import Azure storage utilities
+from store_result_util import storage_manager
 
 load_dotenv()
 
-def get_cosmos_client():
-    """Initialize and return Azure Cosmos DB client if enabled."""
-    if not STORE_RUN_RESULT:
-        return None
-    
-    endpoint = os.getenv('COSMOS_ENDPOINT')
-    database_name = os.getenv('COSMOS_DATABASE', 'magentic_one_results')
-    container_name = os.getenv('COSMOS_CONTAINER', 'run_results')
-    
-    if not endpoint:
-        st.error("Cosmos DB endpoint must be set in COSMOS_ENDPOINT environment variable")
-        return None
-    
-    try:
-        # Use Azure Identity for authentication
-        credential = DefaultAzureCredential()
-        client = CosmosClient(endpoint, credential)
-        database = client.get_database_client(database_name)
-        container = database.get_container_client(container_name)
-        return container
-    except Exception as e:
-        st.error(f"Failed to connect to Cosmos DB: {e}")
-        return None
-
-def store_run_result(run_id: str, prompt: str, results: list, model_name: str, use_aoai: bool, elapsed_time: float, prompt_tokens: int, completion_tokens: int):
-    """Store run result in Azure Cosmos DB."""
-    if not STORE_RUN_RESULT:
-        return
-    
-    container = get_cosmos_client()
-    if not container:
-        return
-    
-    # Convert results to serializable format
-    serialized_results = []
-    for chunk in results:
-        if chunk is None:
-            continue
-        if hasattr(chunk, '__class__'):
-            chunk_data = {
-                'type': chunk.__class__.__name__,
-                'source': getattr(chunk, 'source', None),
-                'content': None,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            if chunk.__class__.__name__ == 'TaskResult':
-                # Store task completion info
-                chunk_data['content'] = f"Task completed in {elapsed_time:.2f} seconds"
-            elif hasattr(chunk, 'type') and chunk.type == 'MultiModalMessage':
-                # Store image data
-                chunk_data['content'] = {
-                    'type': 'image',
-                    'image_data': chunk.content[1].to_base64() if len(chunk.content) > 1 else None
-                }
-            elif hasattr(chunk, 'content'):
-                # Store text content
-                chunk_data['content'] = str(chunk.content)
-            
-            serialized_results.append(chunk_data)
-    
-    document = {
-        'id': run_id,
-        'prompt': prompt,
-        'model_name': model_name,
-        'use_azure_openai': use_aoai,
-        'elapsed_time': elapsed_time,
-        'prompt_tokens': prompt_tokens,
-        'completion_tokens': completion_tokens,
-        'results': serialized_results,
-        'created_at': datetime.now().isoformat()
-    }
-    
-    try:
-        container.create_item(document)
-        st.success(f"Run result stored with ID: {run_id}")
-    except Exception as e:
-        st.error(f"Failed to store run result: {e}")
-
-def load_run_result(run_id: str):
-    """Load run result from Azure Cosmos DB."""
-    if not STORE_RUN_RESULT:
-        return None
-    
-    container = get_cosmos_client()
-    if not container:
-        return None
-    
-    try:
-        document = container.read_item(item=run_id, partition_key=run_id)
-        return document
-    except Exception as e:
-        st.error(f"Failed to load run result: {e}")
-        return None
-
 def display_stored_result(document):
-    """Display a stored run result from Cosmos DB."""
+    """Display a stored run result from Cosmos DB with images from Blob Storage."""
     st.title('🧠🤖 Magentic-One Demo - Stored Result')
     
     st.write(f"**Run ID:** {document['id']}")
@@ -126,22 +27,62 @@ def display_stored_result(document):
     st.write(f"**Prompt Tokens:** {document['prompt_tokens']}")
     st.write(f"**Completion Tokens:** {document['completion_tokens']}")
     
+    # Show document size if available
+    if 'document_size_mb' in document:
+        st.write(f"**Stored Size:** {document['document_size_mb']:.2f} MB")
+    
+    # Show image count if available
+    if 'total_images' in document and document['total_images'] > 0:
+        st.write(f"**Images:** {document['total_images']} stored in blob storage")
+    
+    # Show warning if metadata only
+    if document.get('is_metadata_only', False):
+        st.warning("⚠️ This result was too large for storage. Only metadata is available.")
+    
     st.write("---")
     st.write("**Execution Results:**")
     
     for result in document['results']:
+        # Handle different result types
+        if result.get('type') == 'TruncationNote':
+            st.warning(f"⚠️ {result['content']}")
+            continue
+            
+        if result.get('type') == 'MetadataOnly':
+            st.info(f"ℹ️ {result['content']}")
+            continue
+        
         if result['source']:
             st.write(f"**{format_source_display(result['source'])}**")
         
         if isinstance(result['content'], dict) and result['content'].get('type') == 'image':
-            # Display image
-            image_data = result['content']['image_data']
-            if image_data:
-                image = f'data:image/png;base64,{image_data}'
-                st.image(image)
+            # Display image from blob storage or show note
+            blob_url = result['content'].get('blob_url')
+            if blob_url:
+                try:
+                    # Download image from blob storage using authenticated client
+                    with st.spinner("Loading image from secure storage..."):
+                        image_bytes = storage_manager.download_image_from_blob(blob_url)
+                    
+                    if image_bytes:
+                        # Display the downloaded image
+                        st.image(image_bytes, caption=f"Image ({result['content'].get('size_kb', 'Unknown')} KB)")
+                    else:
+                        st.error("Failed to download image from blob storage")
+                        st.write(f"Image URL: {blob_url}")
+                except Exception as e:
+                    st.error(f"Failed to load image from blob storage: {e}")
+                    st.write(f"Image URL: {blob_url}")
+            elif 'note' in result['content']:
+                st.info(f"🖼️ {result['content']['note']}")
+            else:
+                st.info("🖼️ Image content not available")
         elif result['content'] and isinstance(result['content'], str):
             # Display text content
-            st.markdown(result['content'])
+            content = result['content']
+            if "[Content truncated due to size limits]" in content:
+                st.warning("⚠️ Content was truncated due to size limits")
+            st.markdown(content)
 
 def format_source_display(source):
     """
@@ -241,9 +182,9 @@ async def collect_results(user_prompt: str, USE_AOAI, model_name=None, run_id=No
     st.session_state.completion_token = completion_tokens
     
     # Store in Cosmos DB if enabled and run_id provided
-    if STORE_RUN_RESULT and run_id:
+    if storage_manager.is_enabled() and run_id:
         elapsed_time = results[-1][1] if results[-1] is not None else 0
-        store_run_result(
+        storage_manager.store_run_result(
             run_id=run_id,
             prompt=user_prompt,
             results=results[:-1],  # Exclude the timing tuple
@@ -261,9 +202,9 @@ def main():
     query_params = st.query_params
     run_id = query_params.get('run_id', None)
     
-    if run_id and STORE_RUN_RESULT:
+    if run_id and storage_manager.is_enabled():
         # Display stored result
-        stored_result = load_run_result(run_id)
+        stored_result = storage_manager.load_run_result(run_id)
         if stored_result:
             display_stored_result(stored_result)
             return
@@ -274,7 +215,7 @@ def main():
     st.title('🧠🤖 Magentic-One Demo')
     st.write('Implementation using Autogen and Streamlit')
     
-    if STORE_RUN_RESULT:
+    if storage_manager.is_enabled():
         st.info("💾 Run result storage is enabled - results will be saved to Azure Cosmos DB")
 
     st.sidebar.title('Settings')
@@ -299,14 +240,14 @@ def main():
         new_run_id = str(uuid.uuid4())
         st.write(f"**Task is submitted with {selected_model} model.**")
         
-        if STORE_RUN_RESULT:
+        if storage_manager.is_enabled():
             st.write(f"**Run ID:** `{new_run_id}`")
         
-        results = asyncio.run(collect_results(prompt, USE_AOAI, selected_model, new_run_id if STORE_RUN_RESULT else None))
+        results = asyncio.run(collect_results(prompt, USE_AOAI, selected_model, new_run_id if storage_manager.is_enabled() else None))
         st.session_state.elapsed = results[-1][1] if results[-1] is not None else None
         
         # Display full shareable URL after task completion
-        if STORE_RUN_RESULT:
+        if storage_manager.is_enabled():
             # Get the current URL and construct the shareable link
             current_url = st.get_option("browser.serverAddress") or "http://localhost"
             server_port = st.get_option("browser.serverPort") or 8501

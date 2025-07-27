@@ -11,3 +11,4 @@ azure-identity
 fastapi
 uvicorn
 azure-cosmos
+azure-storage-blob

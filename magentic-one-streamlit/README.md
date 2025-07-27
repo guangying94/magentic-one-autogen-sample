@@ -45,15 +45,29 @@ streamlit run Home.py
 ## Run Result Storage Feature (Optional)
 When the `STORE_RUN_RESULT` environment variable is set to `true`, the application will:
 - Generate a unique GUID for each task execution
-- Store the complete run results (including images and text) as JSON in Azure Cosmos DB
+- Store run metadata and text results in Azure Cosmos DB
+- Store images in Azure Blob Storage and reference them by URL
 - Provide a shareable URL that allows accessing the stored results later
 - Display stored results when accessing the app with `?run_id=<guid>` parameter
 
+### Architecture
+- **Azure Cosmos DB**: Stores run metadata, text results, and image URLs (within 2MB limit)
+- **Azure Blob Storage**: Stores all images with secure, authenticated access
+- **Azure Identity**: Handles authentication for both services securely
+
+### Benefits
+- **No size limitations**: All images are preserved regardless of size
+- **Secure access**: Images stored privately with authenticated access only
+- **Fast loading**: Images cached locally to avoid repeated downloads
+- **Cost effective**: Blob storage is much cheaper than Cosmos DB for large files
+- **Global distribution**: Images can be accessed from anywhere with proper authentication
+
 To enable this feature:
 1. Set `STORE_RUN_RESULT=true` in your `.env` file
-2. Configure Azure Cosmos DB environment variables (see Environment Variables section)
+2. Configure Azure Cosmos DB and Blob Storage environment variables (see Environment Variables section)
 3. Ensure your Cosmos DB has a database and container created (default names: `magentic_one_results` database, `run_results` container)
-4. Ensure proper Azure Identity authentication is configured (see Authentication section below)
+4. Ensure your Blob Storage has a container created (default name: `magentic-one-images`) - public access not required
+5. Ensure proper Azure Identity authentication is configured (see Authentication section below)
 
 7. To stop the app, press `Ctrl+C` in the terminal.
 8. To containerize the app, you can use the Dockerfile provided in the root directory. Run the following command to build the image.
@@ -85,6 +99,8 @@ docker run -p 8501:8501 magentic-one-streamlit
 | `COSMOS_ENDPOINT`            | Azure Cosmos DB endpoint URL                     | `https://account.documents.azure.com:443/` |
 | `COSMOS_DATABASE`            | Cosmos DB database name (optional)               | `magentic_one_results`                     |
 | `COSMOS_CONTAINER`           | Cosmos DB container name (optional)              | `run_results`                              |
+| `AZURE_STORAGE_ACCOUNT_URL`  | Azure Storage Account URL                         | `https://account.blob.core.windows.net/`  |
+| `AZURE_STORAGE_CONTAINER`    | Blob storage container name (optional)           | `magentic-one-images`                      |
 
 ## Azure Identity Authentication
 
@@ -110,9 +126,15 @@ When using the run result storage feature, the application uses Azure Identity f
 
 ### Required Permissions
 
-Your Azure identity (user, service principal, or managed identity) needs the following permissions on the Cosmos DB account:
+Your Azure identity (user, service principal, or managed identity) needs the following permissions:
+
+**For Cosmos DB:**
 - `DocumentDB Account Contributor` role, or
 - Custom role with permissions: `Microsoft.DocumentDB/databaseAccounts/readMetadata`, `Microsoft.DocumentDB/databaseAccounts/*/read`, `Microsoft.DocumentDB/databaseAccounts/*/write`
+
+**For Blob Storage:**
+- `Storage Blob Data Contributor` role, or
+- Custom role with permissions: `Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read`, `Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write`, `Microsoft.Storage/storageAccounts/blobServices/containers/write`
 
 ## References
 - [Streamlit](https://streamlit.io/)
