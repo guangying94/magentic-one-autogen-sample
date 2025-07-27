@@ -21,7 +21,7 @@ st.sidebar.title("Settings")
 USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
 
 if(USE_AOAI):
-    aoai_model_options = ["gpt-4o", "gpt-4o-mini", "o3-mini"]
+    aoai_model_options = ["gpt-4.1","gpt-4o", "gpt-4.1-mini","gpt-4o-mini", "o3-mini"]
     selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
 
 # Video upload
@@ -61,7 +61,7 @@ async def run_video_task(user_prompt: str, model_name=None):
         2. Use the transcription to find which part of the video the question is referring to.\n
         3. In addition, you can use video timestamp to answer question. If no timestamp given, you use timestamp of every 5 seconds to analyse and answer user question. \n
         4. Provide a detailed answer to the question.\n
-        Reply with TERMINATE when the task has been completed.\n
+        Reply with TERMINATE when the task has been completed. You may terminate early when the question or task is completed, instead of waiting for the entire video to be processed.\n
         """
     )
 

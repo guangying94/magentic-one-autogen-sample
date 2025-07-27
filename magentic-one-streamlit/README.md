@@ -18,6 +18,7 @@ Microsoft Autogen 0.4 represents a significant advancement in the AutoGen framew
 - Azure OpenAI account, or OpenAI account
 - LiteLLM (optional)
 - PostgreSQL database (optional)
+- Azure Cosmos DB (optional, for storing run results)
   
 ## How to run locally
 1. Create a python virtual environment
@@ -40,6 +41,20 @@ streamlit run Home.py
 
 5. Open the browser and go to `http://localhost:8501` to see the app.
 6. On the home page, you can provide the task definition and the app will show the progress of the task.
+
+## Run Result Storage Feature (Optional)
+When the `STORE_RUN_RESULT` environment variable is set to `true`, the application will:
+- Generate a unique GUID for each task execution
+- Store the complete run results (including images and text) as JSON in Azure Cosmos DB
+- Provide a shareable URL that allows accessing the stored results later
+- Display stored results when accessing the app with `?run_id=<guid>` parameter
+
+To enable this feature:
+1. Set `STORE_RUN_RESULT=true` in your `.env` file
+2. Configure Azure Cosmos DB environment variables (see Environment Variables section)
+3. Ensure your Cosmos DB has a database and container created (default names: `magentic_one_results` database, `run_results` container)
+4. Ensure proper Azure Identity authentication is configured (see Authentication section below)
+
 7. To stop the app, press `Ctrl+C` in the terminal.
 8. To containerize the app, you can use the Dockerfile provided in the root directory. Run the following command to build the image.
 ```bash
@@ -66,6 +81,38 @@ docker run -p 8501:8501 magentic-one-streamlit
 | `AZURE_OPEN_AI_MODEL_NAME`   | Model name for Azure OpenAI service              | `gpt-4o-mini`                              |
 | `OPEN_AI_MODEL_NAME`         | Model name for OpenAI service                  | `gpt-4o-mini-2024-07-18`                                |
 | `OPEN_AI_API_KEY`            | API key for OpenAI service                       | `sk-xxxxx`                                     |
+| `STORE_RUN_RESULT`           | Enable storing run results in Cosmos DB          | `true` or `false`                          |
+| `COSMOS_ENDPOINT`            | Azure Cosmos DB endpoint URL                     | `https://account.documents.azure.com:443/` |
+| `COSMOS_DATABASE`            | Cosmos DB database name (optional)               | `magentic_one_results`                     |
+| `COSMOS_CONTAINER`           | Cosmos DB container name (optional)              | `run_results`                              |
+
+## Azure Identity Authentication
+
+When using the run result storage feature, the application uses Azure Identity for secure authentication to Cosmos DB instead of connection strings or keys. This follows Azure security best practices.
+
+### Authentication Methods (in order of precedence):
+
+1. **Environment Variables** (for service principals):
+   ```bash
+   AZURE_CLIENT_ID=your-client-id
+   AZURE_CLIENT_SECRET=your-client-secret  
+   AZURE_TENANT_ID=your-tenant-id
+   ```
+
+2. **Managed Identity** (when running on Azure services like App Service, Container Instances, etc.)
+   - No additional configuration needed
+   - Automatically uses the assigned managed identity
+
+3. **Azure CLI** (for local development):
+   ```bash
+   az login
+   ```
+
+### Required Permissions
+
+Your Azure identity (user, service principal, or managed identity) needs the following permissions on the Cosmos DB account:
+- `DocumentDB Account Contributor` role, or
+- Custom role with permissions: `Microsoft.DocumentDB/databaseAccounts/readMetadata`, `Microsoft.DocumentDB/databaseAccounts/*/read`, `Microsoft.DocumentDB/databaseAccounts/*/write`
 
 ## References
 - [Streamlit](https://streamlit.io/)
