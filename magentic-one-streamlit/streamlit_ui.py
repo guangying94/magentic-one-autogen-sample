@@ -10,6 +10,9 @@ from typing import Optional
 from store_result_util import storage_manager
 from agent_interactions import AgentInteractionsHandler
 from task_executor import MagenticOneExecutor
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class StreamlitUI:
@@ -139,9 +142,23 @@ class StreamlitUI:
     
     def _display_shareable_url(self, run_id: str):
         """Display the shareable URL for the executed task."""
-        current_url = st.get_option("browser.serverAddress") or "http://localhost"
-        server_port = st.get_option("browser.serverPort") or 8501
-        full_url = f"{current_url}:{server_port}?run_id={run_id}"
+        import os
+        
+        # Try to get the external URL from environment variables (Azure Container Apps)
+        external_url = os.getenv('WEBSITE_HOSTNAME')  # Azure App Service/Container Apps
+        if not external_url:
+            external_url = os.getenv('HTTP_HOST')  # Alternative environment variable
+        if not external_url:
+            external_url = os.getenv('HOST')  # Another common variable
+        
+        if external_url:
+            # Use HTTPS for Azure deployments
+            full_url = f"https://{external_url}?run_id={run_id}"
+        else:
+            # Fallback to Streamlit's detected URL for local development
+            current_url = st.get_option("browser.serverAddress") or "http://localhost"
+            server_port = st.get_option("browser.serverPort") or 8501
+            full_url = f"{current_url}:{server_port}?run_id={run_id}"
         
         st.success("🔗 **Shareable URL:**")
         st.code(full_url, language="text")
