@@ -11,6 +11,31 @@ Magentic-One consists of a collection of agents that work together to complete t
 - **Coder**: The Code Agent is designed to generate code snippets and scripts to automate tasks.
 - **ComputerTerminal**: The Terminal Agent is responsible for executing commands and interacting with the terminal.
 
+## User Interface Overview
+
+The Streamlit interface provides real-time visualization of MagenticOne's multi-agent system:
+
+### Main Interface
+
+- **Task Input**: Enter your task description in the text field
+- **Settings Sidebar**: Configure your AI model (Azure OpenAI or OpenAI) and select the model version
+- **Execute Button**: Start task execution
+
+### Real-time Agent Monitoring
+
+- **Left Panel - Agent Interactions**: Expandable sections showing detailed interactions from each agent with timestamps
+- **Right Panel - Agent Flow Graph**: Dynamic hierarchical visualization showing:
+  - **User** initiates requests to **Orchestrator**
+  - **Orchestrator** (central hub) delegates tasks to specialized agents
+  - Bi-directional arrows show agent communication
+  - Green "response" arrow appears when task completes
+
+### Navigation
+
+- Main page: Task execution and monitoring
+- Stored results: Access previous runs via shareable URLs (when storage is enabled)
+- The graph updates dynamically as agents respond, providing instant feedback on system activity
+
 ## Introduction of Microsoft Autogen
 Microsoft Autogen 0.4 represents a significant advancement in the AutoGen framework, supporting the development of multi-agent applications. This version introduces enhanced functionalities that simplify the creation and management of AI agents, allowing them to collaborate effectively on complex tasks. The updates focus on improving automation processes and expanding the framework’s capabilities, fostering a robust ecosystem for AI application development.
 
