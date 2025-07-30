@@ -12,3 +12,4 @@ fastapi
 uvicorn
 azure-cosmos
 azure-storage-blob
+graphviz

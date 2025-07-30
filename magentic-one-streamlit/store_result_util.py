@@ -15,7 +15,9 @@ from datetime import datetime
 from azure.cosmos import CosmosClient
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class AzureStorageManager:
     """Manages Azure Cosmos DB and Blob Storage operations for storing run results."""
@@ -168,10 +170,12 @@ class AzureStorageManager:
                         use_aoai: bool, elapsed_time: float, prompt_tokens: int, completion_tokens: int):
         """Store run result in Azure Cosmos DB with images stored in Blob Storage."""
         if not self.storage_enabled:
+            st.info("ℹ️ Storage is disabled. Set STORE_RUN_RESULT=true to enable.")
             return
         
         container = self.get_cosmos_client()
         if not container:
+            st.error("❌ Failed to connect to Cosmos DB. Check your authentication and endpoint configuration.")
             return
         
         # Convert results to serializable format

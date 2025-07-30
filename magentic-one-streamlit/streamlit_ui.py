@@ -39,7 +39,7 @@ class StreamlitUI:
         use_aoai = st.sidebar.checkbox("Use Azure OpenAI", value=True)
         
         if use_aoai:
-            aoai_model_options = ["gpt-4.1", "gpt-4o", "gpt-4.1-mini", "gpt-4o-mini", "o3-mini"]
+            aoai_model_options = ["gpt-4.1-mini","gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini"]
             selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
         else:
             selected_model = st.sidebar.text_input(
@@ -52,8 +52,7 @@ class StreamlitUI:
     
     def render_header(self):
         """Render the main header and info messages."""
-        st.title('🧠🤖 Magentic-One Demo')
-        st.write('Implementation using Autogen and Streamlit')
+        st.title('🤖 Magentic-One Demo')
         
         if storage_manager.is_enabled():
             st.info("💾 Run result storage is enabled - results will be saved to Azure Cosmos DB")
@@ -112,9 +111,12 @@ class StreamlitUI:
         
         # Store results if enabled
         if storage_manager.is_enabled():
+            st.write(f"🔄 **Storing results...** (Run ID: `{new_run_id}`)")
             self._store_results(new_run_id, prompt, results, selected_model, use_aoai, 
                               prompt_tokens, completion_tokens)
             self._display_shareable_url(new_run_id)
+        else:
+            st.info("💾 **Storage disabled** - Set STORE_RUN_RESULT=true to enable result storage")
         
         return prompt
     
@@ -123,6 +125,7 @@ class StreamlitUI:
                       completion_tokens: int):
         """Store results in Cosmos DB if enabled."""
         elapsed_time = results[-1][1] if results[-1] is not None else 0
+        
         storage_manager.store_run_result(
             run_id=run_id,
             prompt=prompt,
@@ -142,10 +145,6 @@ class StreamlitUI:
         
         st.success("🔗 **Shareable URL:**")
         st.code(full_url, language="text")
-    
-    def render_interactions(self):
-        """Render the agent interactions section."""
-        self.interactions_handler.display_static_interactions()
     
     def check_stored_result(self) -> bool:
         """

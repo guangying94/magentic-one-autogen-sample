@@ -3,8 +3,17 @@ Magentic-One Streamlit Demo
 A streamlined interface for running MagenticOne tasks with real-time agent interactions.
 """
 
+import streamlit as st
 from dotenv import load_dotenv
 from streamlit_ui import StreamlitUI
+
+# Configure page settings - must be first Streamlit command
+st.set_page_config(
+    page_title="Magentic-One Demo",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Load environment variables
 load_dotenv()
@@ -25,9 +34,6 @@ def main():
     
     # Handle task execution
     ui.render_task_execution(use_aoai, selected_model)
-    
-    # Display agent interactions
-    #ui.render_interactions()
 
 
 if __name__ == "__main__":
